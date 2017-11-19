@@ -6,6 +6,7 @@
 //  Copyright © 2017 harris.ch. All rights reserved.
 //
 
+import AVFoundation
 import UIKit
 import TVMLKit
 
@@ -16,8 +17,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TVApplicationControllerDe
     var appController: TVApplicationController?
     
     // tvBaseURL points to a server on your local machine. To create a local server for testing purposes, use the following command inside your project folder from the Terminal app: ruby -run -ehttpd . -p9001. See NSAppTransportSecurity for information on using a non-secure server.
-    static let tvBaseURL = "http://localhost:9001/"
-    static let tvBootURL = "\(AppDelegate.tvBaseURL)/application.js"
+    static let tvBaseURL = "http://192.168.0.216:8000/"
+    static let tvBootURL = "\(AppDelegate.tvBaseURL)js/application.js"
     
     // MARK: Javascript Execution Helper
     
@@ -116,5 +117,62 @@ class AppDelegate: UIResponder, UIApplicationDelegate, TVApplicationControllerDe
     func appController(_ appController: TVApplicationController, didStop options: [String: Any]?) {
         print("\(#function) invoked with options: \(options ?? [:])")
     }
+
+    let getThumbnail_script : @convention(block) (String, String) -> String = {
+        (imageId : String, urlStr : String) -> String in
+        let url = URL(string: urlStr)
+//        let url = URL(string: "http://localhost:8080/data/test.mov")
+        return AppDelegate.getThumbnail(imageId: imageId, url: url!)
+    }
+    
+    func appController(_ appController: TVApplicationController, evaluateAppJavaScriptIn jsContext: JSContext){
+        jsContext.setObject(unsafeBitCast(getThumbnail_script, to: AnyObject.self),
+                            forKeyedSubscript: "getThumbnail" as (NSCopying & NSObjectProtocol)!)
+    }
+    
+    // MARK: Preview image grabbing
+    
+    static func getCachesDirectory() -> URL {
+        let paths = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+        return paths[0]
+    }
+    
+    static func getThumbnail(imageId: String, url : URL) -> String {
+        let filename = getCachesDirectory().appendingPathComponent("\(imageId).png")
+        
+//        var frameImg : UIImage? = UIImage(contentsOfFile: filename.absoluteString)
+
+        let exists = FileManager.default.fileExists(atPath: filename.relativePath)
+        
+        if !exists {
+            print("Didn't find cache file for ID \(imageId) - downloading from \(url)")
+            let asset : AVAsset = AVAsset(url: url)
+            
+            let assetImgGenerate : AVAssetImageGenerator = AVAssetImageGenerator(asset: asset)
+            assetImgGenerate.appliesPreferredTrackTransform = true
+            assetImgGenerate.requestedTimeToleranceAfter = kCMTimeZero
+            assetImgGenerate.requestedTimeToleranceBefore = kCMTimeZero
+            
+            let time : CMTime = CMTimeMakeWithSeconds(Float64(3.00), 600)
+            let img : CGImage?
+            do {
+                img = try assetImgGenerate.copyCGImage(at: time, actualTime: nil)
+            } catch {
+                img = nil
+                print(error)
+            }
+            
+            if img != nil {
+                let frameImg : UIImage = UIImage(cgImage: img!)
+                if let data = UIImagePNGRepresentation(frameImg) {
+                    try? data.write(to: filename)
+                    print("Wrote cache file for \(imageId): \(filename)")
+                }
+            }
+        }
+
+        return filename.absoluteString
+    }
+    
 }
 

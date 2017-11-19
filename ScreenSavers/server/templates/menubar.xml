@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<document>
+    <menuBarTemplate>
+        <menuBar>
+            <menuItem selectTargetURL="templates/page1.xml">
+                <title>page1</title>
+            </menuItem>
+            <menuItem selectTargetURL="templates/page2.xml">
+                <title>page2</title>
+            </menuItem>
+        </menuBar>
+    </menuBarTemplate>
+</document>

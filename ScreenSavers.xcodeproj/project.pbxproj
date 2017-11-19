@@ -11,6 +11,8 @@
 		6F42F7401FBDBF1900C68551 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6F42F73F1FBDBF1900C68551 /* Assets.xcassets */; };
 		6F42F74B1FBDBF1900C68551 /* ScreenSaversTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F42F74A1FBDBF1900C68551 /* ScreenSaversTests.swift */; };
 		6F42F7561FBDBF1900C68551 /* ScreenSaversUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F42F7551FBDBF1900C68551 /* ScreenSaversUITests.swift */; };
+		6F42F7661FBDD6FE00C68551 /* menubar.xml in Resources */ = {isa = PBXBuildFile; fileRef = 6F42F7651FBDD6FE00C68551 /* menubar.xml */; };
+		6F42F76B1FBDF33800C68551 /* apple-tv-screensavers.json in Resources */ = {isa = PBXBuildFile; fileRef = 6F42F76A1FBDF33800C68551 /* apple-tv-screensavers.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +44,8 @@
 		6F42F7511FBDBF1900C68551 /* ScreenSaversUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScreenSaversUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6F42F7551FBDBF1900C68551 /* ScreenSaversUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenSaversUITests.swift; sourceTree = "<group>"; };
 		6F42F7571FBDBF1900C68551 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6F42F7651FBDD6FE00C68551 /* menubar.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = menubar.xml; sourceTree = "<group>"; };
+		6F42F76A1FBDF33800C68551 /* apple-tv-screensavers.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "apple-tv-screensavers.json"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -92,8 +96,8 @@
 		6F42F73B1FBDBF1900C68551 /* ScreenSavers */ = {
 			isa = PBXGroup;
 			children = (
+				6F42F7671FBDDB1800C68551 /* server */,
 				6F42F73C1FBDBF1900C68551 /* AppDelegate.swift */,
-				6F42F73E1FBDBF1900C68551 /* application.js */,
 				6F42F73F1FBDBF1900C68551 /* Assets.xcassets */,
 				6F42F7411FBDBF1900C68551 /* Info.plist */,
 			);
@@ -116,6 +120,40 @@
 				6F42F7571FBDBF1900C68551 /* Info.plist */,
 			);
 			path = ScreenSaversUITests;
+			sourceTree = "<group>";
+		};
+		6F42F7641FBDD6A800C68551 /* templates */ = {
+			isa = PBXGroup;
+			children = (
+				6F42F7651FBDD6FE00C68551 /* menubar.xml */,
+			);
+			path = templates;
+			sourceTree = "<group>";
+		};
+		6F42F7671FBDDB1800C68551 /* server */ = {
+			isa = PBXGroup;
+			children = (
+				6F42F7691FBDF30400C68551 /* data */,
+				6F42F7681FBDDB3D00C68551 /* js */,
+				6F42F7641FBDD6A800C68551 /* templates */,
+			);
+			path = server;
+			sourceTree = "<group>";
+		};
+		6F42F7681FBDDB3D00C68551 /* js */ = {
+			isa = PBXGroup;
+			children = (
+				6F42F73E1FBDBF1900C68551 /* application.js */,
+			);
+			path = js;
+			sourceTree = "<group>";
+		};
+		6F42F7691FBDF30400C68551 /* data */ = {
+			isa = PBXGroup;
+			children = (
+				6F42F76A1FBDF33800C68551 /* apple-tv-screensavers.json */,
+			);
+			path = data;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -224,6 +262,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6F42F7661FBDD6FE00C68551 /* menubar.xml in Resources */,
+				6F42F76B1FBDF33800C68551 /* apple-tv-screensavers.json in Resources */,
 				6F42F7401FBDBF1900C68551 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -401,6 +441,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = ch.harris.ScreenSavers;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 3;
 			};
@@ -417,6 +458,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = ch.harris.ScreenSavers;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = 3;
 			};
