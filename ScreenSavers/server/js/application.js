@@ -32,11 +32,13 @@
  */
 App.onLaunch = function (options) {
     console.log("Started application");
+    App.runningTimers = [];
     baseURL = options.BASEURL;
 
-    var jsonUrl = baseURL + "data/apple-tv-screensavers.json";
+    // const jsonUrl = baseURL + "data/apple-tv-screensavers.json";
+    const jsonUrl = "http://a1.phobos.apple.com/us/r1000/000/Features/atv/AutumnResources/videos/entries.json";
 
-    var loadingDocument = createLoadingDocument();
+    const loadingDocument = createLoadingDocument();
     navigationDocument.pushDocument(loadingDocument);
 
     loadJson(jsonUrl, onLoadMainJson, loadingDocument);
@@ -82,6 +84,130 @@ function loadJson(jsonUrl, callback, activeDocument) {
     request.send();
 }
 
+function getMenuBarTemplate(labels) {
+    let items = [];
+
+    for (let label of labels) {
+        let itemTpl = `
+            <menuItem selectTargetLabel="${label}">
+                <title>${label}</title>
+            </menuItem>`;
+        items.push(itemTpl);
+    }
+
+    let menuBarTpl = `
+        <document>
+            <menuBarTemplate>
+                <menuBar>
+                    ${items.join("\n")}
+                </menuBar>
+            </menuBarTemplate>
+        </document>`;
+
+    console.log(`menuBar: ${menuBarTpl}`);
+    let document = new DOMParser().parseFromString(menuBarTpl, "application/xml");
+
+    document.addEventListener("select", _handleSelectEvent);
+
+    return document;
+}
+
+function _updateThumbnail(key, url) {
+    let lockupImg = navigationDocument.documents[0].getElementById(key);
+    if (lockupImg === "undefined") {
+        setTimeout(_updateThumbnail, 100, key, url);
+    }
+
+    // let thumb = `https://loremflickr.com/720/405?random=${key}`;
+    let thumb = getThumbnail(key, url);
+    lockupImg.setAttribute("src", thumb);
+}
+
+function _updateThumbnailImg(img) {
+    const key = img.getAttribute('id');
+    const url = img.parentNode.getAttribute('targetUrl');
+    const thumb = getThumbnail(key, url);
+    img.setAttribute('src', thumb);
+}
+
+function _getLockupsForLabel(label) {
+    const vidsForLabel = App.videosByLabel[label];
+
+    let lockups = [];
+
+    for (let key in vidsForLabel) {
+        if (vidsForLabel.hasOwnProperty(key)) {
+            let vid = vidsForLabel[key];
+            // setTimeout(_updateThumbnail, 1500, key, vid.url);
+            // let thumb = "http://localhost:8000/data/_pattern.jpg";
+            let thumb = "resource://_pattern";
+            lockups.push(`
+                <lockup targetUrl="${vid.url}">
+                    <img id="${key}" src="${thumb}" width="912" height="513" />
+                    <title>${label} – ${vid.timeOfDay === 'day' ? 'Day' : 'Night'}</title>
+                </lockup>
+            `);
+        }
+    }
+
+    return lockups;
+}
+
+function _getListItemForLabel(label) {
+    const lockups = _getLockupsForLabel(label);
+
+    let listItemTpl = `
+        <listItemLockup>
+        <title>${label}</title>
+            <decorationLabel>${lockups.length}</decorationLabel>
+            <relatedContent>
+                <grid>
+                    <section>
+                        ${lockups.join('')}
+                    </section>
+                </grid>
+            </relatedContent>
+        </listItemLockup>`;
+
+    return listItemTpl;
+}
+
+function getCatalogTemplate(labels) {
+    let listItems = Array.from(labels).map(_getListItemForLabel);
+
+    let catalogTpl = `
+        <document>
+            <head>
+                <style>
+                </style>
+            </head>
+            <catalogTemplate>
+                <banner>
+                    <title>ScreenSavers</title>
+                </banner>
+                <list>
+                    <section>
+                        <!--<header>-->
+                            <!--<title>Section Header</title>-->
+                        <!--</header>-->
+                        ${listItems.join('')}
+                    </section>
+                </list>
+            </catalogTemplate>
+        </document>`;
+
+    let parsedTemplate = new DOMParser().parseFromString(catalogTpl, "application/xml");
+    parsedTemplate.addEventListener("select", _handleSelectVideo);
+
+    let listItemLockupElem = parsedTemplate.getElementsByTagName('listItemLockup');
+    for (let i = 0, lockupElem; i < listItemLockupElem.length; ++i) {
+        lockupElem = listItemLockupElem.item(i);
+        lockupElem.addEventListener('highlight', _handleCatalogEvent);
+    }
+
+    return parsedTemplate;
+}
+
 function onLoadMainJson(request, activeDocument) {
     const data = JSON.parse(request.responseText);
 
@@ -115,36 +241,13 @@ function onLoadMainJson(request, activeDocument) {
         }
     }
 
-    let items = [];
-
-    for (let label of labels) {
-        let itemTpl = `
-            <menuItem selectTargetLabel="${label}">
-                <title>${label}</title>
-            </menuItem>`;
-        items.push(itemTpl);
-    }
-
-    let menuBarTpl = `
-        <document>
-            <menuBarTemplate>
-                <menuBar>
-                    ${items.join("\n")}
-                </menuBar>
-            </menuBarTemplate>
-        </document>`;
-
-    console.log(`menuBar: ${menuBarTpl}`);
-    let document = new DOMParser().parseFromString(menuBarTpl, "application/xml");
-
-    document.addEventListener("select", handleSelectEvent);
+    // let document = getMenuBarTemplate(labels);
+    let document = getCatalogTemplate(labels);
 
     if (typeof activeDocument !== "undefined") {
         navigationDocument.replaceDocument(document, activeDocument);
-        console.log("Done with replaceDocument");
     } else {
         navigationDocument.pushDocument(document);
-        console.log("Done with pushDocument");
     }
 }
 
@@ -157,13 +260,12 @@ function loadAndPushDocument(url) {
 
     request.onreadystatechange = function () {
         if (request.readyState !== 4) {
-            console.log(`request.readyState: ${request.readyState}`);
             return;
         }
 
         if (request.status === 200) {
             const document = request.responseXML;
-            document.addEventListener("select", handleSelectEvent);
+            document.addEventListener("select", _handleSelectEvent);
             navigationDocument.replaceDocument(document, loadingDocument)
         } else {
             const alertDocument = createAlertDocument("Error", `Error loading document ${url}`);
@@ -190,7 +292,6 @@ function updateMenuItem(menuItem, label) {
             let vid = vidsForLabel[key];
             // let thumb = `https://loremflickr.com/1280/720?random=${key}`;
             let thumb = getThumbnail(key, vid.url);
-            console.log(`thumb: ${thumb}`);
             movies += `
                 <lockup targetUrl="${vid.url}">
                     <img src="${thumb}" width="1280" height="720" />
@@ -213,22 +314,17 @@ function updateMenuItem(menuItem, label) {
                 </carousel>
             </showcaseTemplate>
         </document>`;
-    console.log(`template: ${template}`);
 
     let parsedTemplate = new DOMParser().parseFromString(template, "application/xml");
-    parsedTemplate.addEventListener("select", handleSelectVideo);
+    parsedTemplate.addEventListener("select", _handleSelectVideo);
 
     menuItemDocument.setDocument(parsedTemplate, menuItem);
-
-    console.log(`Set menu item document to ${label}`);
 }
 
-function handleSelectVideo(event) {
+function _handleSelectVideo(event) {
     const selectedElement = event.target;
 
-    console.log(selectedElement);
     let targetUrl = selectedElement.getAttribute("targetUrl");
-    console.log(targetUrl);
 
     const singleVideo = new MediaItem('video', targetUrl);
     const videoList = new Playlist();
@@ -238,7 +334,7 @@ function handleSelectVideo(event) {
     myPlayer.play();
 }
 
-function handleSelectEvent(event) {
+function _handleSelectEvent(event) {
     const selectedElement = event.target;
 
     let targetLabel = selectedElement.getAttribute("selectTargetLabel");
@@ -252,6 +348,21 @@ function handleSelectEvent(event) {
     else {
         console.log(`Got unexpected tagname: ${selectedElement.tagName}`);
     }
+}
+
+function _loadCatalogSection(imgs) {
+    for (let j = 0; j < imgs.length; j++) {
+        const image = imgs.item(j);
+        setTimeout(_updateThumbnailImg, 0, image);
+    }
+}
+
+function _handleCatalogEvent(event) {
+    App.runningTimers.map((timer) => clearTimeout(timer));
+    App.runningTimers = [];
+
+    const imgs = event.target.getElementsByTagName('img');
+    App.runningTimers.push(setTimeout(_loadCatalogSection, 500, imgs));
 }
 
 /**
